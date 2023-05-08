@@ -1,0 +1,40 @@
+name: "Setup pip-tools"
+description: "Setup python and deps using pip-tools"
+
+inputs:
+  extra-args:
+    description: path to extra requirements
+    required: false
+    default: ""
+  sync:
+    description: run pip-sync
+    required: false
+    default: true
+  python-version:
+    description: python version
+    required: false
+    default: "3.10"
+  pip-version:
+    description: pip version
+    required: false
+    default: "~=23.1.0"
+  pip-tools-version:
+    description: pip-tools version
+    required: false
+    default: "~=6.13.0"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: "pip"
+        cache-dependency-path: |
+          backend/requirements.txt
+          ${{ inputs.extra-args }}
+    - run: pip install --disable-pip-version-check --upgrade "pip${{ inputs.pip-version }}" "pip-tools${{ inputs.pip-tools-version }}" wheel
+      shell: bash
+    - run: pip-sync backend/requirements.txt ${{ inputs.extra-args }}
+      if: ${{ inputs.sync != 'false' }}
+      shell: bash
