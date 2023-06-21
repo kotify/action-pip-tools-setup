@@ -2,10 +2,10 @@ name: "Setup pip-tools"
 description: "Setup python and deps using pip-tools"
 
 inputs:
-  extra-args:
+  dependency-path:
     description: path to extra requirements
     required: false
-    default: ""
+    default: "backend/requirements.txt"
   sync:
     description: run pip-sync
     required: false
@@ -29,12 +29,19 @@ runs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ inputs.python-version }}
-        cache: "pip"
-        cache-dependency-path: |
-          backend/requirements.txt
-          ${{ inputs.extra-args }}
-    - run: pip install --disable-pip-version-check --upgrade "pip${{ inputs.pip-version }}" "pip-tools${{ inputs.pip-tools-version }}" wheel
-      shell: bash
-    - run: pip-sync backend/requirements.txt ${{ inputs.extra-args }}
+    - name: Cache dependencies
       if: ${{ inputs.sync != 'false' }}
+      uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: pip-${{ env.pythonLocation }}-${{ hashFiles(inputs.dependency-path) }}
+        restore-keys: |
+          pip-${{ env.pythonLocation }}-${{ hashFiles(inputs.dependency-path) }}
+          pip-${{ env.pythonLocation }}-
+    - run: pip install --disable-pip-version-check --upgrade "pip${{ inputs.pip-version }}" "pip-tools${{ inputs.pip-tools-version }}" wheel
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      shell: bash
+    - run: pip-sync ${{ inputs.dependency-path }}
+      if: ${{ inputs.sync != 'false' && steps.cache.outputs.cache-hit != 'true' }}
       shell: bash
