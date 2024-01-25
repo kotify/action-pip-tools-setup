@@ -12,12 +12,11 @@ inputs:
     default: true
   python-version:
     description: python version
-    required: false
-    default: "3.10"
+    required: true
   pip-version:
     description: pip version
     required: false
-    default: "~=23.2.0"
+    default: "~=23.3.0"
   pip-tools-version:
     description: pip-tools version
     required: false
@@ -26,12 +25,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
     - name: Cache dependencies
       if: ${{ inputs.sync != 'false' }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: cache
       with:
         path: ${{ env.pythonLocation }}
